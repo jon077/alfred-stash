@@ -12,7 +12,7 @@
 		<array>
 			<dict>
 				<key>destinationuid</key>
-				<string>DE68EE6A-DA23-4B40-B5B4-6E574C14FB23</string>
+				<string>E3F336D5-3A85-4D56-A037-643D1EB19A63</string>
 				<key>modifiers</key>
 				<integer>0</integer>
 				<key>modifiersubtext</key>
@@ -41,25 +41,6 @@
 	<string>Stash</string>
 	<key>objects</key>
 	<array>
-		<dict>
-			<key>config</key>
-			<dict>
-				<key>concurrently</key>
-				<false/>
-				<key>escaping</key>
-				<integer>0</integer>
-				<key>script</key>
-				<string>python stash_output.py {query}</string>
-				<key>type</key>
-				<integer>0</integer>
-			</dict>
-			<key>type</key>
-			<string>alfred.workflow.action.script</string>
-			<key>uid</key>
-			<string>E3F336D5-3A85-4D56-A037-643D1EB19A63</string>
-			<key>version</key>
-			<integer>0</integer>
-		</dict>
 		<dict>
 			<key>config</key>
 			<dict>
@@ -100,6 +81,25 @@
 		<dict>
 			<key>config</key>
 			<dict>
+				<key>concurrently</key>
+				<false/>
+				<key>escaping</key>
+				<integer>0</integer>
+				<key>script</key>
+				<string>python stash_output.py {query}</string>
+				<key>type</key>
+				<integer>0</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.script</string>
+			<key>uid</key>
+			<string>E3F336D5-3A85-4D56-A037-643D1EB19A63</string>
+			<key>version</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
 				<key>argumenttype</key>
 				<integer>1</integer>
 				<key>escaping</key>
@@ -132,25 +132,6 @@
 			<key>version</key>
 			<integer>0</integer>
 		</dict>
-		<dict>
-			<key>config</key>
-			<dict>
-				<key>concurrently</key>
-				<false/>
-				<key>escaping</key>
-				<integer>102</integer>
-				<key>script</key>
-				<string>python stash_settings_output.py {query}</string>
-				<key>type</key>
-				<integer>0</integer>
-			</dict>
-			<key>type</key>
-			<string>alfred.workflow.action.script</string>
-			<key>uid</key>
-			<string>DE68EE6A-DA23-4B40-B5B4-6E574C14FB23</string>
-			<key>version</key>
-			<integer>0</integer>
-		</dict>
 	</array>
 	<key>readme</key>
 	<string></string>
@@ -166,15 +147,10 @@
 			<key>ypos</key>
 			<real>10</real>
 		</dict>
-		<key>DE68EE6A-DA23-4B40-B5B4-6E574C14FB23</key>
-		<dict>
-			<key>ypos</key>
-			<real>130</real>
-		</dict>
 		<key>E3F336D5-3A85-4D56-A037-643D1EB19A63</key>
 		<dict>
 			<key>ypos</key>
-			<real>10</real>
+			<real>70</real>
 		</dict>
 	</dict>
 	<key>webaddress</key>
