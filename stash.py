@@ -1,8 +1,9 @@
 import sys
 import base64
 import os
-from workflow import Workflow, web, ICON_WARNING, PasswordNotFound
-from workflow.background import run_in_background
+import subprocess
+from workflow import Workflow, web, ICON_INFO, ICON_WARNING, PasswordNotFound
+from workflow.background import run_in_background, is_running
 
 BASE_URL = None
 DELIMITER = None
@@ -15,7 +16,7 @@ def check_for_settings(wf):
   BASE_URL = wf.settings.get('baseurl', None)
   if not BASE_URL:
     wf.add_item(title = 'No base url set.',
-                subtitle = 'Please use asgard-settings to set your base url.',
+                subtitle = 'Please use stash-settings to set your base url.',
                 valid=False,
                 icon=ICON_WARNING)
     wf.send_feedback()
@@ -25,13 +26,13 @@ def check_for_settings(wf):
   DELIMITER = wf.settings.get('delimiter', ':')
 
   global DIRECTORY
-  DIRECTORY = wf.settings.get('directory', '')
+  DIRECTORY = wf.settings.get('directory', '~')
 
   global USERNAME
   USERNAME = wf.settings.get('username', None)
   if not USERNAME:
     wf.add_item(title = 'No username set.',
-                subtitle = 'Please use asgard-settings to set your username.',
+                subtitle = 'Please use stash-settings to set your username.',
                 valid=False,
                 icon=ICON_WARNING)
     wf.send_feedback()
@@ -42,29 +43,22 @@ def check_for_settings(wf):
     PASSWORD = wf.get_password('stash_password')
   except PasswordNotFound:
     wf.add_item(title = 'No password set.',
-                subtitle = 'Please use asgard-settings to set your password.',
+                subtitle = 'Please use stash-settings to set your password.',
                 valid=False,
                 icon=ICON_WARNING)
     wf.send_feedback()
     return 0
 
 def get_repos():
-  auth = base64.b64encode('{}:{}'.format(USERNAME, PASSWORD))
-  limit = 1000
-  isLastPage = False
-  start = 0
-  repos = []
-  while not isLastPage:
-    url = '{}/rest/api/1.0/repos'.format(BASE_URL)
-    params = {'limit': 1000, 'start': start}
-    headers = {'Authorization': 'Basic {}'.format(auth)}
-    response = web.get(url, params = params, headers = headers)
-    response.raise_for_status()
-    result = response.json()
-    isLastPage = result['isLastPage']
-    if not isLastPage:
-      start = result['nextPageStart']
-    repos.extend(result['values'])
+  repos = wf.cached_data('repos', None, max_age=0)
+
+  if not wf.cached_data_fresh('repos', max_age=60):
+    cmd = ['/usr/bin/python', wf.workflowfile('update_repos.py')]
+    run_in_background('update-repos', cmd)
+    log.debug('not fresh')
+
+  if is_running('update-repos'):
+    log.debug('running update-repos')
   return repos
 
 def search_key_for_repo(repo):
@@ -73,13 +67,14 @@ def search_key_for_repo(repo):
   return u' '.join(elements)
 
 def list_repos(repos):
-  for repo in repos:
-    icon_path = 'avatars/{}.png'.format(repo['project']['key'])
-    avatarExists = os.path.isfile(icon_path)
-    wf.add_item(title = repo['name'],
-                subtitle = repo['project']['name'],
-                autocomplete = repo['name'],
-                icon = icon_path if avatarExists else None)
+  if repos:
+    for repo in repos:
+      icon_path = 'avatars/{}.png'.format(repo['project']['key'])
+      avatarExists = os.path.isfile(icon_path)
+      wf.add_item(title = repo['name'],
+                  subtitle = repo['project']['name'],
+                  autocomplete = repo['name'],
+                  icon = icon_path if avatarExists else None)
 
 def name_repo_tab(repo):
   projectKey = repo['project']['key']
@@ -192,6 +187,14 @@ def list_file_options(repo, file_path):
                 valid = True,
                 arg = '--browse {}'.format(file_directory))
 
+def split_query(query):
+  query_list = query.split(DELIMITER)
+  if query_list[-1].endswith('\\'):
+    command = 'stash {}'.format(DELIMITER.join(query_list[:-1]))
+    subprocess.call(['osascript', 'alfred_search.applescript', command])
+    sys.exit(0)
+  return query_list
+
 def main(wf):
   check_for_settings(wf)
 
@@ -200,10 +203,10 @@ def main(wf):
   else:
     query = None
 
-  repos = wf.cached_data('repos', get_repos, max_age=0)
+  repos = get_repos()
 
   if query:
-    query = query.split(DELIMITER)
+    query = split_query(query)
     repos_filtered = wf.filter(query[0], repos, key=search_key_for_repo)
     repo = next((repo for repo in repos_filtered if (query[0] == repo['name'])), None)
     if repo and len(query) > 1:
