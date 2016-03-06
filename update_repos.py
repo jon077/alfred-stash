@@ -13,7 +13,7 @@ def check_for_settings(wf):
   BASE_URL = wf.settings.get('baseurl', None)
   if not BASE_URL:
     wf.add_item(title = 'No base url set.',
-                subtitle = 'Please use asgard-settings to set your base url.',
+                subtitle = 'Please use stash-settings to set your base url.',
                 valid=False,
                 icon=ICON_WARNING)
     wf.send_feedback()
@@ -23,7 +23,7 @@ def check_for_settings(wf):
   USERNAME = wf.settings.get('username', None)
   if not USERNAME:
     wf.add_item(title = 'No username set.',
-                subtitle = 'Please use asgard-settings to set your username.',
+                subtitle = 'Please use stash-settings to set your username.',
                 valid=False,
                 icon=ICON_WARNING)
     wf.send_feedback()
@@ -34,7 +34,7 @@ def check_for_settings(wf):
     PASSWORD = wf.get_password('stash_password')
   except PasswordNotFound:
     wf.add_item(title = 'No password set.',
-                subtitle = 'Please use asgard-settings to set your password.',
+                subtitle = 'Please use stash-settings to set your password.',
                 valid=False,
                 icon=ICON_WARNING)
     wf.send_feedback()
