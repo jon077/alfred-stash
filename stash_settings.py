@@ -1,5 +1,5 @@
 import sys
-from workflow import Workflow
+from workflow import Workflow, PasswordNotFound, ICON_WARNING
 
 def main(wf):
 
@@ -13,30 +13,74 @@ def main(wf):
   else:
     canComplete = False
 
+  BASEURL = wf.settings.get('baseurl', None)
+  DELIMITER = wf.settings.get('delimiter', None)
+  DIRECTORY = wf.settings.get('directory', None)
+  USERNAME = wf.settings.get('username', None)
+
+  try:
+    PASSWORD = wf.get_password('stash_password')
+  except PasswordNotFound:
+    PASSWORD = None
+
+  if BASEURL:
+    baseUrlSub = 'Base url set: "{}"'.format(BASEURL)
+    baseUrlIcon = None
+  else:
+    baseUrlSub = 'Add your base url and hit Enter'
+    baseUrlIcon = ICON_WARNING
+
+  if DELIMITER:
+    delimiterSub = 'Delimiter set: "{}"'.format(DELIMITER)
+  else:
+    delimiterSub = 'Default delimiter set: ":"'
+
+  if DIRECTORY:
+    directorySub = 'Directory set: "{}"'.format(DIRECTORY)
+  else:
+    directorySub = 'Add your local workspace directory and hit Enter'
+
+  if USERNAME:
+    usernameSub = 'Username set: "{}"'.format(USERNAME)
+    usernameIcon = None
+  else:
+    usernameSub = 'Add your username and hit Enter'
+    usernameIcon = ICON_WARNING
+
+  if PASSWORD:
+    passwordSub = 'Password is set.'
+    passwordIcon = None
+  else:
+    passwordSub = 'Add your password and hit Enter'
+    passwordIcon = ICON_WARNING
+
   wf.add_item(title = 'Set base url',
-    subtitle = 'Add your base url and hit Enter',
+    subtitle = baseUrlSub,
     valid = canComplete,
-    arg = '--baseurl {}'.format(query))
+    arg = '--baseurl {}'.format(query),
+    icon = baseUrlIcon)
 
   wf.add_item(title = 'Set delimiter',
-    subtitle = 'Add your delimiter and hit Enter',
+    subtitle = delimiterSub,
     valid = canComplete,
     arg = '--delimiter {}'.format(query))
 
   wf.add_item(title = 'Set directory',
-    subtitle = 'Add your local projects directory and hit Enter',
+    subtitle = directorySub,
     valid = canComplete,
     arg = '--directory {}'.format(query))
 
   wf.add_item(title = 'Set username',
-    subtitle = 'Add your username and hit Enter',
+    subtitle = usernameSub,
     valid = canComplete,
-    arg = '--username {}'.format(query))
+    arg = '--username {}'.format(query),
+    icon = usernameIcon)
 
   wf.add_item(title = 'Set password',
-    subtitle = 'Add your password and hit Enter',
+    subtitle = passwordSub,
     valid = canComplete,
-    arg = '--password {}'.format(query))
+    arg = '--password {}'.format(query),
+    icon = passwordIcon)
 
   wf.add_item(title = 'Get project avatars',
     subtitle = 'Get project avatars',

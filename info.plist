@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>bundleid</key>
-	<string>peterburt.stash</string>
+	<string>net.pburt.alfred.stash</string>
 	<key>category</key>
 	<string>Productivity</string>
 	<key>connections</key>
@@ -19,7 +19,18 @@
 				<string></string>
 			</dict>
 		</array>
-		<key>4362F1D1-D238-479D-ADBE-EC5585F884B9</key>
+		<key>59F8F19E-59DF-418E-9789-2FA0115CB2F2</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>E3F336D5-3A85-4D56-A037-643D1EB19A63</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+			</dict>
+		</array>
+		<key>BBA531B7-B86D-4571-8332-FC563630A274</key>
 		<array>
 			<dict>
 				<key>destinationuid</key>
@@ -74,7 +85,44 @@
 			<key>type</key>
 			<string>alfred.workflow.input.scriptfilter</string>
 			<key>uid</key>
-			<string>4362F1D1-D238-479D-ADBE-EC5585F884B9</string>
+			<string>BBA531B7-B86D-4571-8332-FC563630A274</string>
+			<key>version</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>argumenttype</key>
+				<integer>1</integer>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>keyword</key>
+				<string>stash-inbox</string>
+				<key>queuedelaycustom</key>
+				<integer>3</integer>
+				<key>queuedelayimmediatelyinitially</key>
+				<true/>
+				<key>queuedelaymode</key>
+				<integer>0</integer>
+				<key>queuemode</key>
+				<integer>1</integer>
+				<key>runningsubtext</key>
+				<string>Retrieving...</string>
+				<key>script</key>
+				<string>python stash_inbox.py {query}</string>
+				<key>subtext</key>
+				<string>Browse stash inbox</string>
+				<key>title</key>
+				<string>Stash Inbox</string>
+				<key>type</key>
+				<integer>0</integer>
+				<key>withspace</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>59F8F19E-59DF-418E-9789-2FA0115CB2F2</string>
 			<key>version</key>
 			<integer>0</integer>
 		</dict>
@@ -140,9 +188,14 @@
 		<key>2FF3D081-2070-4996-A83E-73F6D03559D3</key>
 		<dict>
 			<key>ypos</key>
-			<real>130</real>
+			<real>230</real>
 		</dict>
-		<key>4362F1D1-D238-479D-ADBE-EC5585F884B9</key>
+		<key>59F8F19E-59DF-418E-9789-2FA0115CB2F2</key>
+		<dict>
+			<key>ypos</key>
+			<real>120</real>
+		</dict>
+		<key>BBA531B7-B86D-4571-8332-FC563630A274</key>
 		<dict>
 			<key>ypos</key>
 			<real>10</real>
@@ -150,7 +203,7 @@
 		<key>E3F336D5-3A85-4D56-A037-643D1EB19A63</key>
 		<dict>
 			<key>ypos</key>
-			<real>70</real>
+			<real>120</real>
 		</dict>
 	</dict>
 	<key>webaddress</key>
