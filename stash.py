@@ -1,9 +1,11 @@
-import sys
 import base64
 import os
 import subprocess
-from workflow import Workflow, web, ICON_INFO, ICON_WARNING, PasswordNotFound
+import sys
+
+from workflow import Workflow, web, PasswordNotFound
 from workflow.background import run_in_background, is_running
+from workflow.workflow import ICON_INFO, ICON_WARNING
 
 BASE_URL = None
 DELIMITER = None
@@ -12,15 +14,9 @@ USERNAME = None
 PASSWORD = None
 
 def check_for_settings(wf):
+  missing_settings = False
   global BASE_URL
   BASE_URL = wf.settings.get('baseurl', None)
-  if not BASE_URL:
-    wf.add_item(title = 'No base url set.',
-                subtitle = 'Please use stash-settings to set your base url.',
-                valid=False,
-                icon=ICON_WARNING)
-    wf.send_feedback()
-    return 0
 
   global DELIMITER
   DELIMITER = wf.settings.get('delimiter', ':')
@@ -30,20 +26,19 @@ def check_for_settings(wf):
 
   global USERNAME
   USERNAME = wf.settings.get('username', None)
-  if not USERNAME:
-    wf.add_item(title = 'No username set.',
-                subtitle = 'Please use stash-settings to set your username.',
-                valid=False,
-                icon=ICON_WARNING)
-    wf.send_feedback()
-    return 0
+
+  if not BASE_URL or not USERNAME:
+    missing_settings = True
 
   global PASSWORD
   try:
     PASSWORD = wf.get_password('stash_password')
   except PasswordNotFound:
-    wf.add_item(title = 'No password set.',
-                subtitle = 'Please use stash-settings to set your password.',
+    missing_settings = True
+
+  if missing_settings:
+    wf.add_item(title = 'Missing Settings',
+                subtitle = 'Please use stash-settings command',
                 valid=False,
                 icon=ICON_WARNING)
     wf.send_feedback()
@@ -52,18 +47,21 @@ def check_for_settings(wf):
 def get_repos():
   repos = wf.cached_data('repos', None, max_age=0)
 
-  if not wf.cached_data_fresh('repos', max_age=60):
+  if not wf.cached_data_fresh('repos', max_age=60) and not is_running('update-repos'):
     cmd = ['/usr/bin/python', wf.workflowfile('update_repos.py')]
     run_in_background('update-repos', cmd)
     log.debug('not fresh')
 
   if is_running('update-repos'):
     log.debug('running update-repos')
+    if not repos:
+      wf.add_item(title = 'Retrieving repository data',
+                  icon = ICON_INFO)
   return repos
 
 def search_key_for_repo(repo):
   elements = []
-  elements.append(repo['name'])
+  elements.append(repo['project']['key'] + '/' + repo['name'])
   return u' '.join(elements)
 
 def list_repos(repos):
@@ -73,7 +71,7 @@ def list_repos(repos):
       avatarExists = os.path.isfile(icon_path)
       wf.add_item(title = repo['name'],
                   subtitle = repo['project']['name'],
-                  autocomplete = repo['name'],
+                  autocomplete = repo['project']['key'] + '/' + repo['name'],
                   icon = icon_path if avatarExists else None)
 
 def name_repo_tab(repo):
@@ -96,7 +94,7 @@ def list_repo_options(repo):
 
   wf.add_item(title = 'List files',
               subtitle = 'Search files for this repo',
-              autocomplete = repo['name'] + DELIMITER)
+              autocomplete = repo['project']['key'] + '/' + repo['name'] + DELIMITER)
 
   pull_requests_url = '{}/projects/{}/repos/{}/pull-requests'.format(BASE_URL, projectKey, repoName)
   wf.add_item(title = 'Open pull-request list in browser',
@@ -146,7 +144,7 @@ def get_files(repo):
   files = []
   while not isLastPage:
     url = '{}/rest/api/1.0/projects/{}/repos/{}/files'.format(BASE_URL, projectKey, repoName)
-    params = {'limit': 1000, 'start': start}
+    params = {'limit': limit, 'start': start}
     headers = {'Authorization': 'Basic {}'.format(auth)}
     response = web.get(url, params = params, headers = headers)
     response.raise_for_status()
@@ -187,13 +185,18 @@ def list_file_options(repo, file_path):
                 valid = True,
                 arg = '--browse {}'.format(file_directory))
 
-def split_query(query):
+def split_and_check_for_backslash(query):
   query_list = query.split(DELIMITER)
   if query_list[-1].endswith('\\'):
     command = 'stash {}'.format(DELIMITER.join(query_list[:-1]))
     subprocess.call(['osascript', 'alfred_search.applescript', command])
     sys.exit(0)
   return query_list
+
+def open_iterm():
+  workflow_directory = wf.workflowdir.replace(' ', '\\ ')
+  out = ['osascript', 'open_iterm.scpt', 'cd {} && echo -ne \'\\033]0;{}\\007\''.format(workflow_directory, wf.name)]
+  run_in_background('iterm', out)
 
 def main(wf):
   check_for_settings(wf)
@@ -205,10 +208,10 @@ def main(wf):
 
   repos = get_repos()
 
-  if query:
-    query = split_query(query)
+  if repos and query:
+    query = split_and_check_for_backslash(query)
     repos_filtered = wf.filter(query[0], repos, key=search_key_for_repo)
-    repo = next((repo for repo in repos_filtered if (query[0] == repo['name'])), None)
+    repo = next((repo for repo in repos_filtered if (query[0] == repo['project']['key'] + '/' + repo['name'])), None)
     if repo and len(query) > 1:
       def wrapper_get_files():
         return get_files(repo)
@@ -232,8 +235,9 @@ def main(wf):
   wf.send_feedback()
   return 0
 
-
 if __name__ == u"__main__":
   wf = Workflow()
+  wf.magic_prefix = 'wf:'  # Change prefix to 'wf:'
+  wf.magic_arguments['iterm'] = open_iterm
   log = wf.logger
   sys.exit(wf.run(main))

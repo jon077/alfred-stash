@@ -1,9 +1,11 @@
-import sys
-import base64
 import os
 import subprocess
-from workflow import Workflow, web, ICON_WARNING, PasswordNotFound
-from workflow.background import run_in_background
+import sys
+
+from workflow import Workflow, PasswordNotFound
+from workflow.background import is_running, run_in_background
+from workflow.workflow import ICON_INFO, ICON_WARNING
+
 
 BASE_URL = None
 DELIMITER = None
@@ -12,65 +14,49 @@ USERNAME = None
 PASSWORD = None
 
 def check_for_settings(wf):
+  missing_settings = False
   global BASE_URL
   BASE_URL = wf.settings.get('baseurl', None)
-  if not BASE_URL:
-    wf.add_item(title = 'No base url set.',
-                subtitle = 'Please use stash-settings to set your base url.',
-                valid=False,
-                icon=ICON_WARNING)
-    wf.send_feedback()
-    return 0
 
   global DELIMITER
   DELIMITER = wf.settings.get('delimiter', ':')
 
   global DIRECTORY
-  DIRECTORY = wf.settings.get('directory', '')
+  DIRECTORY = wf.settings.get('directory', '~')
 
   global USERNAME
   USERNAME = wf.settings.get('username', None)
-  if not USERNAME:
-    wf.add_item(title = 'No username set.',
-                subtitle = 'Please use stash-settings to set your username.',
-                valid=False,
-                icon=ICON_WARNING)
-    wf.send_feedback()
-    return 0
+
+  if not BASE_URL or not USERNAME:
+    missing_settings = True
 
   global PASSWORD
   try:
     PASSWORD = wf.get_password('stash_password')
   except PasswordNotFound:
-    wf.add_item(title = 'No password set.',
-                subtitle = 'Please use stash-settings to set your password.',
+    missing_settings = True
+
+  if missing_settings:
+    wf.add_item(title = 'Missing Settings',
+                subtitle = 'Please use stash-settings command',
                 valid=False,
                 icon=ICON_WARNING)
     wf.send_feedback()
     return 0
 
 def get_inbox():
-  auth = base64.b64encode('{}:{}'.format(USERNAME, PASSWORD))
-  limit = 1000
-  isLastPage = False
-  start = 0
-  inbox = []
-  roles = ['author', 'reviewer', 'participant']
-  for role in roles:
-    log.debug(role)
-    while not isLastPage:
-      url = '{}/rest/inbox/1.0/pull-requests'.format(BASE_URL)
-      params = {'limit': 1000, 'start': start, 'role': role}
-      headers = {'Authorization': 'Basic {}'.format(auth)}
-      response = web.get(url, params = params, headers = headers)
-      response.raise_for_status()
-      result = response.json()
-      isLastPage = result['isLastPage']
-      if not isLastPage:
-        start = result['nextPageStart']
-      inbox.extend(result['values'])
-      log.debug(result['size'])
-    isLastPage = False
+  inbox = wf.cached_data('inbox', None, max_age=0)
+
+  if not wf.cached_data_fresh('inbox', max_age=60) and not is_running('update-inbox'):
+    cmd = ['/usr/bin/python', wf.workflowfile('update_inbox.py')]
+    run_in_background('update-inbox', cmd)
+    log.debug('inbox not fresh')
+
+  if is_running('update-inbox'):
+    log.debug('running update-inbox')
+    if not inbox:
+      wf.add_item(title = 'Retrieving inbox data',
+                  icon = ICON_INFO)
   return inbox
 
 def search_key_for_inbox(pr):
@@ -104,8 +90,7 @@ def list_pr_options(pr):
   repoName = pr['toRef']['repository']['name']
   directory = '{}/{}/{}'.format(DIRECTORY, projectKey, repoName)
   dirExists = os.path.isdir(directory)
-
-  pull_request_url = '{}{}'.format(BASE_URL, pr['link']['url'])
+  pull_request_url = pr['links']['self'][0]['href']
   wf.add_item(title = 'Open pull-request in browser',
               subtitle = pull_request_url,
               valid = True,
@@ -131,7 +116,7 @@ def list_pr_options(pr):
                   valid = True,
                   arg = '--iterm "{}"'.format(clone))
 
-def split_query(query):
+def split_and_check_for_backslash(query):
   query_list = query.split(DELIMITER)
   if query_list[-1].endswith('\\'):
     command = 'stash-inbox {}'.format(DELIMITER.join(query_list[:-1]))
@@ -150,7 +135,7 @@ def main(wf):
   inbox = wf.cached_data('inbox', get_inbox, max_age=30)
 
   if query:
-    query = split_query(query)
+    query = split_and_check_for_backslash(query)
     inbox_filtered = wf.filter(query[0], inbox, key=search_key_for_inbox)
     pr = next((pr for pr in inbox_filtered if (query[0] == pr['title'].replace(' ', '-'))), None)
     if pr and len(query) == 1:
