@@ -1,0 +1,51 @@
+{
+  "settings": [
+    {
+      "name": "baseurl",
+      "type": "config",
+      "title": "Set base URL",
+      "subtitle": "Base URL set:",
+      "subtitleAlt": "Add your base URL and hit Enter"
+    },
+    {
+      "name": "delimiter",
+      "type": "config",
+      "title": "Set delimiter",
+      "subtitle": "Delimiter set:",
+      "default": ":"
+    },
+    {
+      "name": "directory",
+      "type": "config",
+      "title": "Set directory",
+      "subtitle": "Working directory set:",
+      "subtitleAlt": "Add your local workspace directory and hit Enter"
+    },
+    {
+      "name": "username",
+      "type": "config",
+      "title": "Set username",
+      "subtitle": "Username set:",
+      "subtitleAlt": "Add your username and hit Enter"
+    },
+    {
+      "name": "password",
+      "type": "password",
+      "title": "Set password",
+      "subtitle": "Password is set in keychain: net.pburt.alfred.stash",
+      "subtitleAlt": "Add your password and hit Enter"
+    },
+    {
+      "name": "avatars",
+      "type": "action",
+      "title": "Get project avatars",
+      "subtitle": "Get project avatars"
+    },
+    {
+      "name": "edit",
+      "type": "action",
+      "title": "Edit settings",
+      "subtitle": "Hit Enter to open this settings file"
+    }
+  ]
+}

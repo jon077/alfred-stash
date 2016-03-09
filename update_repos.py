@@ -1,46 +1,12 @@
-import sys
 import base64
-import os
-from workflow import Workflow, web, ICON_WARNING, PasswordNotFound
-from workflow.background import run_in_background
+import sys
 
-BASE_URL = None
-USERNAME = None
-PASSWORD = None
-
-def check_for_settings(wf):
-  global BASE_URL
-  BASE_URL = wf.settings.get('baseurl', None)
-  if not BASE_URL:
-    wf.add_item(title = 'No base url set.',
-                subtitle = 'Please use stash-settings to set your base url.',
-                valid=False,
-                icon=ICON_WARNING)
-    wf.send_feedback()
-    return 0
-
-  global USERNAME
-  USERNAME = wf.settings.get('username', None)
-  if not USERNAME:
-    wf.add_item(title = 'No username set.',
-                subtitle = 'Please use stash-settings to set your username.',
-                valid=False,
-                icon=ICON_WARNING)
-    wf.send_feedback()
-    return 0
-
-  global PASSWORD
-  try:
-    PASSWORD = wf.get_password('stash_password')
-  except PasswordNotFound:
-    wf.add_item(title = 'No password set.',
-                subtitle = 'Please use stash-settings to set your password.',
-                valid=False,
-                icon=ICON_WARNING)
-    wf.send_feedback()
-    return 0
+from workflow import Workflow, web
 
 def get_repos():
+  USERNAME = wf.settings.get('username', None)
+  PASSWORD = wf.get_password('stash_password')
+  BASE_URL = wf.settings.get('baseurl', None)
   auth = base64.b64encode('{}:{}'.format(USERNAME, PASSWORD))
   limit = 1000
   isLastPage = False
@@ -48,7 +14,7 @@ def get_repos():
   repos = []
   while not isLastPage:
     url = '{}/rest/api/1.0/repos'.format(BASE_URL)
-    params = {'limit': 1000, 'start': start}
+    params = {'limit': limit, 'start': start}
     headers = {'Authorization': 'Basic {}'.format(auth)}
     response = web.get(url, params = params, headers = headers)
     response.raise_for_status()
@@ -57,12 +23,13 @@ def get_repos():
     if not isLastPage:
       start = result['nextPageStart']
     repos.extend(result['values'])
-  repos = [repo for repo in repos if not repo.get('origin')]
+  for repo in repos:
+    project = repo.get('project')
+    repo['project']['key'] = project.get('key').replace('~', '')
   return repos
 
 def main(wf):
-  check_for_settings(wf)
-  repos = wf.cached_data('repos', get_repos, max_age=60)
+  wf.cached_data('repos', get_repos, max_age=60)
   return 0
 
 if __name__ == u"__main__":
