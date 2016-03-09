@@ -46,7 +46,7 @@ def main(wf):
     return 0
 
   if args.iterm:
-    out = ['osascript', 'open_iterm.scpt', ' '.join(args.iterm)]
+    out = ['osascript', 'open_iterm.applescript', ' '.join(args.iterm)]
     run_in_background('iterm', out)
     return 0
 

@@ -195,8 +195,9 @@ def split_and_check_for_backslash(query):
 
 def open_iterm():
   workflow_directory = wf.workflowdir.replace(' ', '\\ ')
-  out = ['osascript', 'open_iterm.scpt', 'cd {} && echo -ne \'\\033]0;{}\\007\''.format(workflow_directory, wf.name)]
+  out = ['osascript', 'open_iterm.applescript', 'cd {} && echo -ne \'\\033]0;{}\\007\''.format(workflow_directory, wf.name)]
   run_in_background('iterm', out)
+  return 'Opening workflow in iTerm'
 
 def main(wf):
   check_for_settings(wf)
@@ -237,7 +238,7 @@ def main(wf):
 
 if __name__ == u"__main__":
   wf = Workflow()
-  wf.magic_prefix = 'wf:'  # Change prefix to 'wf:'
-  wf.magic_arguments['iterm'] = open_iterm
+#   wf.magic_prefix = 'wf:'  # Change prefix to 'wf:'
+  wf.magic_arguments['openiterm'] = open_iterm
   log = wf.logger
   sys.exit(wf.run(main))
